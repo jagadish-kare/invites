@@ -540,8 +540,52 @@ export default function InvitationTemplate({
                         <div className="text-4xl mb-2">🎁</div>
                         <p className="font-serif text-xl mb-1" style={{ color: c.bgMedium }}>Blessings</p>
                         <p className="text-sm mb-4" style={{ color: c.bgDark }}>{data.qrLabel || 'Scan to send gift'}</p>
-                        <div className="bg-white p-4 rounded-xl inline-block shadow-inner">
+                        <div className="bg-white p-4 rounded-xl inline-block shadow-inner mb-4">
                           <img src={data.qrCodeImage} alt="QR Code" className="w-48 h-48 object-contain" />
+                        </div>
+                        
+                        {/* Save QR Button */}
+                        <div>
+                          <a
+                            href={data.qrCodeImage}
+                            download={`qr-code-${data.groomName || 'gift'}.png`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all"
+                            style={{ 
+                              backgroundColor: c.bgMedium, 
+                              color: c.textPrimary,
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              // For cross-origin images, we need to handle differently
+                              const img = new Image()
+                              img.crossOrigin = 'anonymous'
+                              img.onload = () => {
+                                const canvas = document.createElement('canvas')
+                                canvas.width = img.width
+                                canvas.height = img.height
+                                const ctx = canvas.getContext('2d')
+                                ctx?.drawImage(img, 0, 0)
+                                const link = document.createElement('a')
+                                link.download = `qr-code-${data.groomName || 'gift'}.png`
+                                link.href = canvas.toDataURL('image/png')
+                                link.click()
+                              }
+                              img.onerror = () => {
+                                // Fallback: open in new tab
+                                window.open(data.qrCodeImage, '_blank')
+                              }
+                              img.src = data.qrCodeImage
+                              e.preventDefault()
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                            </svg>
+                            Save QR Code
+                          </a>
                         </div>
                       </motion.div>
                     </motion.div>

@@ -397,7 +397,7 @@ app.post('/api/invitation', authMiddleware, async (req: any, res) => {
       id,
       user_id: req.user.id,
       cloudinary_folder: cloudinaryFolder,
-      template_id: 'royal-maroon',
+      template_id: data.templateId || 'royal-maroon',
       
       // Event type and labels
       event_type: data.eventType || 'wedding',
@@ -471,6 +471,9 @@ app.put('/api/invitation/:id', authMiddleware, async (req: any, res) => {
     }
 
     const updateData = {
+      // Template
+      template_id: data.templateId || existing.template_id || 'royal-maroon',
+      
       // Event type and labels
       event_type: data.eventType || existing.event_type,
       event_title: data.eventTitle || existing.event_title,
