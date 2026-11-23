@@ -1,0 +1,49 @@
+{
+  "name": "wedding-invitation-platform",
+  "version": "1.0.0",
+  "description": "Digital Wedding Invitation Platform with Multiple Templates",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:client": "vite",
+    "dev:server": "tsx watch server/index.ts",
+    "build": "vite build && npm run build:server",
+    "build:server": "tsc -p server/tsconfig.json",
+    "preview": "vite preview",
+    "start": "NODE_ENV=production node dist-server/index.js",
+    "start:win": "set NODE_ENV=production&& node dist-server/index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "framer-motion": "^10.16.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^1.4.5-lts.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/uuid": "^9.0.7",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.7.0",
+    "concurrently": "^8.2.0",
+    "postcss": "^8.5.33",
+    "tailwindcss": "^3.4.0",
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

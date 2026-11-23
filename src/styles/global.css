@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #1a0a0a;
+}
+
+/* Font classes */
+.font-script {
+  font-family: 'Great Vibes', cursive;
+}
+
+.font-serif {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.font-sans {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom scrollbar for invitation */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #d4af37, #b8960c);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #f5d67a, #d4af37);
+}
+
+/* Perspective for 3D effects */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Text shadow for golden text */
+.text-shadow-gold {
+  text-shadow: 0 2px 10px rgba(212, 175, 55, 0.5);
+}
+
+/* Glow effects */
+.glow-gold {
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3), 
+              0 0 40px rgba(212, 175, 55, 0.2),
+              0 0 60px rgba(212, 175, 55, 0.1);
+}
+
+.glow-gold-strong {
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.5), 
+              0 0 60px rgba(212, 175, 55, 0.3),
+              0 0 90px rgba(212, 175, 55, 0.2);
+}
+
+/* Gradient backgrounds */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+/* Animation utilities */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg, 
+    rgba(212, 175, 55, 0.1) 0%, 
+    rgba(212, 175, 55, 0.3) 50%, 
+    rgba(212, 175, 55, 0.1) 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.6);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Selection color */
+::selection {
+  background-color: rgba(212, 175, 55, 0.3);
+  color: #f5e6d3;
+}
+
+/* Focus styles */
+input:focus, textarea:focus, button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.5);
+}
+
+/* Smooth image loading */
+img {
+  transition: opacity 0.3s ease;
+}
+
+img[loading] {
+  opacity: 0;
+}
+
+img.loaded {
+  opacity: 1;
+}
+
+/* Custom utilities */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .border-3 {
+    border-width: 3px;
+  }
+  
+  .drop-shadow-gold {
+    filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.3));
+  }
+}
