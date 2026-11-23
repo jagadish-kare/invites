@@ -43,12 +43,29 @@ export default function InvitationTemplate({
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isMuted) {
-        audioRef.current.play().catch(console.log)
+        audioRef.current.play().catch(err => {
+          console.log('Audio play failed:', err)
+        })
         setIsMuted(false)
       } else {
         audioRef.current.pause()
         setIsMuted(true)
       }
+    }
+  }
+
+  // Try to play audio when user opens invitation (after user interaction)
+  const handleOpen = () => {
+    setIsOpened(true)
+    // Try to play audio - browser may still block but worth trying after click
+    if (audioRef.current && data.audioUrl) {
+      audioRef.current.volume = 0.5 // Start at 50% volume
+      audioRef.current.play()
+        .then(() => setIsMuted(false))
+        .catch(() => {
+          // Browser blocked autoplay, user will need to click audio button
+          setIsMuted(true)
+        })
     }
   }
 
@@ -128,14 +145,6 @@ export default function InvitationTemplate({
   const getYear = (d: string) => new Date(d).getFullYear()
   const getWeekday = (d: string) => new Date(d).toLocaleString('en', { weekday: 'long' })
 
-  const handleOpen = () => {
-    setIsOpened(true)
-    if (audioRef.current && data.audioUrl) {
-      audioRef.current.play().catch(() => {})
-      setIsMuted(false)
-    }
-  }
-
   const nextPhoto = () => {
     setSlideDirection(1)
     setCurrentPhoto(p => (p + 1) % data.galleryPhotos.length)
@@ -165,11 +174,13 @@ export default function InvitationTemplate({
         </audio>
       )}
 
-      {/* Audio Control */}
+      {/* Audio Control - more prominent when muted and audio is available */}
       {audioLoaded && isOpened && (
         <motion.button
           onClick={toggleAudio}
-          className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
+          className={`fixed bottom-6 right-6 z-50 rounded-full flex items-center justify-center shadow-lg ${
+            isMuted ? 'w-auto px-4 py-3 gap-2' : 'w-12 h-12'
+          }`}
           style={{ backgroundColor: c.bgLight, border: `2px solid ${c.primary}` }}
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -182,6 +193,9 @@ export default function InvitationTemplate({
               <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
             )}
           </svg>
+          {isMuted && (
+            <span className="text-xs font-medium" style={{ color: c.primary }}>Play Music</span>
+          )}
         </motion.button>
       )}
 

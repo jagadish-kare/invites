@@ -525,52 +525,53 @@ export default function CreatePage() {
 
           {/* Background Music */}
           <FormSection title="🎵 Background Music (Optional)">
-            <p className="text-[#a08060] text-sm mb-4">Add background music that plays when the invitation opens</p>
+            <p className="text-[#a08060] text-sm mb-4">Add background music that plays when guests open your invitation</p>
             
             {/* Audio File Upload */}
-            <div className="mb-4">
-              <label className="block text-sm text-[#c9a86c] mb-2">Upload Audio File (MP3)</label>
+            <div>
+              <label className="block text-sm text-[#c9a86c] mb-2">Upload Audio File (MP3, up to 20MB)</label>
               <label className="block border-2 border-dashed border-[#d4af37]/40 rounded-xl p-6 text-center cursor-pointer hover:border-[#d4af37] hover:bg-[#d4af37]/5 transition-all">
                 <div className="text-3xl mb-2">🎶</div>
                 <p className="text-[#c9a86c] text-sm">Click to upload MP3 file</p>
+                <p className="text-[#a08060] text-xs mt-1">Recommended: 30 seconds - 2 minutes of your favorite song</p>
                 <input
                   type="file"
-                  accept="audio/mp3,audio/mpeg,audio/wav"
+                  accept="audio/mp3,audio/mpeg,audio/wav,audio/*"
                   onChange={(e) => {
                     const file = e.target.files?.[0]
-                    if (file) handleFileUpload(file, 'audio')
+                    if (file) {
+                      if (file.size > 20 * 1024 * 1024) {
+                        alert('File is too large. Maximum size is 20MB.')
+                        return
+                      }
+                      handleFileUpload(file, 'audio')
+                    }
                   }}
                   className="hidden"
                 />
               </label>
+              
               {audioUrl && (
-                <div className="mt-3 flex items-center gap-3 p-3 bg-[#1a0a0a]/80 border border-[#d4af37]/30 rounded-lg">
-                  <span className="text-2xl">🎵</span>
-                  <span className="text-[#f5e6d3] text-sm flex-1 truncate">{audioUrl.split('/').pop()}</span>
-                  <button
-                    type="button"
-                    onClick={() => setAudioUrl('')}
-                    className="text-red-500 hover:text-red-400"
-                  >
-                    ✕
-                  </button>
+                <div className="mt-4 p-4 bg-[#1a0a0a]/80 border border-[#d4af37]/30 rounded-lg">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">🎵</span>
+                    <span className="text-[#f5e6d3] text-sm flex-1 truncate">Audio uploaded successfully!</span>
+                    <button
+                      type="button"
+                      onClick={() => setAudioUrl('')}
+                      className="text-red-500 hover:text-red-400 text-lg"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  {/* Audio Preview */}
+                  <audio controls className="w-full h-10" style={{ filter: 'sepia(20%) saturate(70%) brightness(90%)' }}>
+                    <source src={audioUrl} type="audio/mpeg" />
+                    Your browser does not support the audio element.
+                  </audio>
                 </div>
               )}
             </div>
-
-            <div className="text-center text-[#c9a86c] text-sm my-3">— OR —</div>
-
-            {/* YouTube Link */}
-            <Input 
-              label="YouTube Music Link" 
-              name="youtubeLink" 
-              value={formData.youtubeLink}
-              onChange={handleInputChange}
-              placeholder="https://youtube.com/watch?v=..."
-            />
-            <p className="text-[#a08060] text-xs mt-2">
-              Note: YouTube audio will be extracted. For best results, use direct MP3 upload.
-            </p>
           </FormSection>
 
           {/* Schedule */}
