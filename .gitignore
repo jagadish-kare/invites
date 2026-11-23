@@ -5,9 +5,6 @@ node_modules/
 dist/
 dist-server/
 
-# Database
-db.json
-
 # Uploads (keep folder but not contents)
 uploads/*
 !uploads/.gitkeep
