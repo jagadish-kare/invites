@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { TemplateProps } from '../../types/invitation'
+import frameImage from '../../assets/frame-reference.png'
 
 export default function RoyalMaroonTemplate({ 
   data, 
@@ -477,63 +478,21 @@ function Section({ children }: { children: React.ReactNode }) {
 
 function OrnateFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative">
-      {/* Main frame */}
-      <div className="relative bg-gradient-to-b from-[#4a0d0d]/90 to-[#3a0a0a]/95 border border-[#d4af37]/60 rounded-lg overflow-hidden">
-        {/* Top arch decoration */}
-        <div className="absolute top-0 left-0 right-0 h-8 overflow-hidden">
-          <svg viewBox="0 0 400 40" className="w-full h-full" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#b8960c" />
-                <stop offset="50%" stopColor="#f5d67a" />
-                <stop offset="100%" stopColor="#b8960c" />
-              </linearGradient>
-            </defs>
-            <path d="M0,40 Q100,0 200,0 Q300,0 400,40" fill="none" stroke="url(#goldGrad)" strokeWidth="2"/>
-            <circle cx="200" cy="8" r="4" fill="#d4af37"/>
-            <circle cx="180" cy="12" r="2" fill="#d4af37"/>
-            <circle cx="220" cy="12" r="2" fill="#d4af37"/>
-          </svg>
-        </div>
-
-        {/* Corner decorations */}
-        <CornerDecoration position="top-left" />
-        <CornerDecoration position="top-right" />
-        <CornerDecoration position="bottom-left" />
-        <CornerDecoration position="bottom-right" />
-
-        {/* Content */}
-        <div className="relative z-10 pt-4">
-          {children}
-        </div>
-
-        {/* Bottom decoration */}
-        <div className="absolute bottom-0 left-0 right-0 h-6 overflow-hidden">
-          <svg viewBox="0 0 400 30" className="w-full h-full" preserveAspectRatio="none">
-            <path d="M0,0 Q100,30 200,30 Q300,30 400,0" fill="none" stroke="#d4af37" strokeWidth="1" opacity="0.6"/>
-          </svg>
-        </div>
+    <div 
+      className="relative mx-auto max-w-[380px]"
+      style={{
+        backgroundImage: `url(${frameImage})`,
+        backgroundSize: '100% 100%',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        padding: '50px 25px 40px 25px',
+        minHeight: '320px',
+      }}
+    >
+      {/* Content inside the frame */}
+      <div className="relative z-10">
+        {children}
       </div>
-    </div>
-  )
-}
-
-function CornerDecoration({ position }: { position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' }) {
-  const posClass = {
-    'top-left': 'top-2 left-2',
-    'top-right': 'top-2 right-2 -scale-x-100',
-    'bottom-left': 'bottom-2 left-2 -scale-y-100',
-    'bottom-right': 'bottom-2 right-2 scale-[-1]',
-  }[position]
-
-  return (
-    <div className={`absolute w-12 h-12 pointer-events-none ${posClass}`}>
-      <svg viewBox="0 0 50 50" className="w-full h-full">
-        <path d="M5,5 Q5,25 25,25 Q25,5 45,5" fill="none" stroke="#d4af37" strokeWidth="1.5" opacity="0.8"/>
-        <circle cx="8" cy="8" r="3" fill="#d4af37" opacity="0.6"/>
-        <circle cx="20" cy="20" r="2" fill="#d4af37" opacity="0.4"/>
-      </svg>
     </div>
   )
 }
