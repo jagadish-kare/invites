@@ -1,7 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { EVENT_TYPES, EventType } from '../types/invitation'
 
 interface FormData {
+  eventType: EventType;
+  eventTitle: string;
+  mainCeremonyLabel: string;
+  secondaryCeremonyLabel: string;
+  receptionLabel: string;
   groomName: string;
   brideName: string;
   groomFatherName: string;
@@ -25,8 +32,28 @@ interface FormData {
   schedule: { time: string; event: string }[];
 }
 
+const DEFAULT_LABELS: Record<EventType, { main: string; secondary: string; reception: string }> = {
+  wedding: { main: 'WEDDING CEREMONY', secondary: 'HALADI CEREMONY', reception: 'RECEPTION' },
+  housewarming: { main: 'GRIHA PRAVESH', secondary: 'POOJA CEREMONY', reception: 'LUNCH' },
+  engagement: { main: 'ENGAGEMENT CEREMONY', secondary: 'RING CEREMONY', reception: 'DINNER' },
+  birthday: { main: 'BIRTHDAY CELEBRATION', secondary: 'CAKE CUTTING', reception: 'PARTY' },
+  other: { main: 'MAIN CEREMONY', secondary: 'CEREMONY', reception: 'CELEBRATION' },
+}
+
 export default function CreatePage() {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const editId = searchParams.get('edit')
+  const duplicateId = searchParams.get('duplicate')
+  const isEditMode = !!editId
+  const isDuplicateMode = !!duplicateId
+
   const [formData, setFormData] = useState<FormData>({
+    eventType: 'wedding',
+    eventTitle: 'Wedding Invitation',
+    mainCeremonyLabel: 'WEDDING CEREMONY',
+    secondaryCeremonyLabel: 'HALADI CEREMONY',
+    receptionLabel: 'RECEPTION',
     groomName: '',
     brideName: '',
     groomFatherName: '',
@@ -55,11 +82,85 @@ export default function CreatePage() {
   const [qrCodeImage, setQrCodeImage] = useState<string>('')
   const [tempId] = useState<string>(`temp-${Date.now()}`)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<{ id: string; url: string } | null>(null)
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Load existing invitation data for edit/duplicate
+  useEffect(() => {
+    const loadInvitation = async (id: string) => {
+      setIsLoading(true)
+      try {
+        const token = localStorage.getItem('authToken')
+        const response = await fetch(`/api/invitation/${id}/full`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setFormData({
+            eventType: data.event_type || 'wedding',
+            eventTitle: data.event_title || 'Wedding Invitation',
+            mainCeremonyLabel: data.main_ceremony_label || 'WEDDING CEREMONY',
+            secondaryCeremonyLabel: data.secondary_ceremony_label || 'HALADI CEREMONY',
+            receptionLabel: data.reception_label || 'RECEPTION',
+            groomName: data.groom_name || '',
+            brideName: data.bride_name || '',
+            groomFatherName: data.groom_father_name || '',
+            groomMotherName: data.groom_mother_name || '',
+            brideFatherName: data.bride_father_name || '',
+            brideMotherName: data.bride_mother_name || '',
+            groomAddress: data.groom_address || '',
+            brideAddress: data.bride_address || '',
+            weddingDate: isDuplicateMode ? '' : (data.wedding_date || ''),
+            weddingTime: data.wedding_time || '',
+            weddingVenue: data.wedding_venue || '',
+            weddingVenueAddress: data.wedding_venue_address || '',
+            googleMapsLink: data.google_maps_link || '',
+            haladiDate: isDuplicateMode ? '' : (data.haladi_date || ''),
+            haladiTime: data.haladi_time || '',
+            haladiVenue: data.haladi_venue || '',
+            receptionDate: isDuplicateMode ? '' : (data.reception_date || ''),
+            receptionTime: data.reception_time || '',
+            receptionVenue: data.reception_venue || '',
+            qrLabel: data.qr_label || 'Gift',
+            schedule: data.schedule?.length ? data.schedule : [{ time: '09:00', event: '' }],
+          })
+          // For duplicate, don't copy photos (user needs to upload new ones)
+          if (!isDuplicateMode) {
+            setMainPhoto(data.main_photo || '')
+            setGalleryPhotos(data.gallery_photos || [])
+            setQrCodeImage(data.qr_code_image || '')
+          }
+        }
+      } catch (error) {
+        console.error('Error loading invitation:', error)
+        alert('Failed to load invitation data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (editId) loadInvitation(editId)
+    else if (duplicateId) loadInvitation(duplicateId)
+  }, [editId, duplicateId, isDuplicateMode])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleEventTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const eventType = e.target.value as EventType
+    const eventInfo = EVENT_TYPES.find(et => et.value === eventType)
+    const labels = DEFAULT_LABELS[eventType]
+    
+    setFormData(prev => ({
+      ...prev,
+      eventType,
+      eventTitle: eventInfo?.defaultTitle || 'You are Invited',
+      mainCeremonyLabel: labels.main,
+      secondaryCeremonyLabel: labels.secondary,
+      receptionLabel: labels.reception,
+    }))
   }
 
   const handleFileUpload = async (
@@ -71,7 +172,8 @@ export default function CreatePage() {
 
     try {
       const token = localStorage.getItem('authToken')
-      const response = await fetch(`/api/upload/${tempId}`, {
+      const uploadId = isEditMode ? editId : tempId
+      const response = await fetch(`/api/upload/${uploadId}`, {
         method: 'POST',
         headers: { 
           Authorization: `Bearer ${token}` 
@@ -128,8 +230,11 @@ export default function CreatePage() {
       }
 
       const token = localStorage.getItem('authToken')
-      const response = await fetch('/api/invitation', {
-        method: 'POST',
+      const url = isEditMode ? `/api/invitation/${editId}` : '/api/invitation'
+      const method = isEditMode ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -140,12 +245,17 @@ export default function CreatePage() {
       const data = await response.json()
       
       if (data.success) {
-        setResult({ id: data.id, url: data.url })
+        if (isEditMode) {
+          alert('Invitation updated successfully!')
+          navigate('/dashboard')
+        } else {
+          setResult({ id: data.id, url: data.url })
+        }
       } else {
         throw new Error(data.error)
       }
     } catch (error) {
-      alert('Failed to create invitation: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      alert('Failed to save invitation: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setIsSubmitting(false)
     }
@@ -158,6 +268,23 @@ export default function CreatePage() {
     }
   }
 
+  // Get dynamic labels based on event type
+  const isWeddingType = formData.eventType === 'wedding'
+  const hostLabel1 = isWeddingType ? "Groom's Name" : "Host Name"
+  const hostLabel2 = isWeddingType ? "Bride's Name" : "Co-Host Name (Optional)"
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#1a0a0a] via-[#2d1515] to-[#1a0a0a] flex items-center justify-center">
+        <motion.div
+          className="w-10 h-10 border-2 border-[#d4af37]/30 border-t-[#d4af37] rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a0a0a] via-[#2d1515] to-[#1a0a0a] py-10 px-4">
       <div className="max-w-3xl mx-auto">
@@ -166,27 +293,87 @@ export default function CreatePage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="font-script text-4xl text-[#d4af37] mb-2">Create Your Invitation</h1>
-          <p className="text-[#c9a86c]">Fill in the details to generate your wedding invitation</p>
+          <h1 className="font-script text-4xl text-[#d4af37] mb-2">
+            {isEditMode ? 'Edit Invitation' : isDuplicateMode ? 'Create from Template' : 'Create Your Invitation'}
+          </h1>
+          <p className="text-[#c9a86c]">
+            {isEditMode ? 'Update your invitation details' : 'Fill in the details to generate your invitation'}
+          </p>
         </motion.div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Couple Details */}
-          <FormSection title="💑 Couple Details">
+          {/* Event Type Selection */}
+          <FormSection title="🎊 Event Type">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-[#c9a86c] mb-2">Select Event Type *</label>
+                <select
+                  name="eventType"
+                  value={formData.eventType}
+                  onChange={handleEventTypeChange}
+                  className="w-full p-3 bg-[#1a0a0a]/80 border border-[#d4af37]/30 rounded-lg 
+                    text-[#f5e6d3] focus:outline-none focus:border-[#d4af37] transition-colors"
+                >
+                  {EVENT_TYPES.map(et => (
+                    <option key={et.value} value={et.value}>{et.label}</option>
+                  ))}
+                </select>
+              </div>
+              <Input 
+                label="Event Title" 
+                name="eventTitle" 
+                value={formData.eventTitle}
+                onChange={handleInputChange}
+                placeholder="e.g., Wedding Invitation"
+              />
+            </div>
+          </FormSection>
+
+          {/* Custom Ceremony Labels */}
+          <FormSection title="📝 Ceremony Labels (Customize headings)">
+            <p className="text-[#a08060] text-sm mb-4">These labels will appear as section headings in your invitation</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input 
+                label="Main Ceremony Label *" 
+                name="mainCeremonyLabel" 
+                value={formData.mainCeremonyLabel}
+                onChange={handleInputChange}
+                placeholder="e.g., WEDDING CEREMONY"
+                required
+              />
+              <Input 
+                label="Secondary Ceremony Label" 
+                name="secondaryCeremonyLabel" 
+                value={formData.secondaryCeremonyLabel}
+                onChange={handleInputChange}
+                placeholder="e.g., HALADI CEREMONY"
+              />
+              <Input 
+                label="Reception/Party Label" 
+                name="receptionLabel" 
+                value={formData.receptionLabel}
+                onChange={handleInputChange}
+                placeholder="e.g., RECEPTION"
+              />
+            </div>
+          </FormSection>
+
+          {/* Host/Couple Details */}
+          <FormSection title={isWeddingType ? "💑 Couple Details" : "👤 Host Details"}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input 
-                label="Groom's Name *" 
+                label={`${hostLabel1} *`}
                 name="groomName" 
                 value={formData.groomName}
                 onChange={handleInputChange}
                 required
               />
               <Input 
-                label="Bride's Name *" 
+                label={hostLabel2}
                 name="brideName" 
                 value={formData.brideName}
                 onChange={handleInputChange}
-                required
+                required={isWeddingType}
               />
             </div>
           </FormSection>
@@ -194,51 +381,55 @@ export default function CreatePage() {
           {/* Family Details */}
           <FormSection title="👨‍👩‍👧 Family Details">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Groom's Father Name" name="groomFatherName" value={formData.groomFatherName} onChange={handleInputChange} />
-              <Input label="Groom's Mother Name" name="groomMotherName" value={formData.groomMotherName} onChange={handleInputChange} />
-              <Input label="Groom's Address" name="groomAddress" value={formData.groomAddress} onChange={handleInputChange} className="md:col-span-2" />
-              <Input label="Bride's Father Name" name="brideFatherName" value={formData.brideFatherName} onChange={handleInputChange} />
-              <Input label="Bride's Mother Name" name="brideMotherName" value={formData.brideMotherName} onChange={handleInputChange} />
-              <Input label="Bride's Address" name="brideAddress" value={formData.brideAddress} onChange={handleInputChange} className="md:col-span-2" />
+              <Input label={isWeddingType ? "Groom's Father Name" : "Father's Name"} name="groomFatherName" value={formData.groomFatherName} onChange={handleInputChange} />
+              <Input label={isWeddingType ? "Groom's Mother Name" : "Mother's Name"} name="groomMotherName" value={formData.groomMotherName} onChange={handleInputChange} />
+              <Input label={isWeddingType ? "Groom's Address" : "Address"} name="groomAddress" value={formData.groomAddress} onChange={handleInputChange} className="md:col-span-2" />
+              {isWeddingType && (
+                <>
+                  <Input label="Bride's Father Name" name="brideFatherName" value={formData.brideFatherName} onChange={handleInputChange} />
+                  <Input label="Bride's Mother Name" name="brideMotherName" value={formData.brideMotherName} onChange={handleInputChange} />
+                  <Input label="Bride's Address" name="brideAddress" value={formData.brideAddress} onChange={handleInputChange} className="md:col-span-2" />
+                </>
+              )}
             </div>
           </FormSection>
 
-          {/* Wedding Ceremony */}
-          <FormSection title="💒 Wedding Ceremony">
+          {/* Main Ceremony */}
+          <FormSection title={`💒 ${formData.mainCeremonyLabel || 'Main Ceremony'}`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Wedding Date *" name="weddingDate" type="date" value={formData.weddingDate} onChange={handleInputChange} required />
-              <Input label="Wedding Time *" name="weddingTime" type="time" value={formData.weddingTime} onChange={handleInputChange} required />
+              <Input label="Date *" name="weddingDate" type="date" value={formData.weddingDate} onChange={handleInputChange} required />
+              <Input label="Time *" name="weddingTime" type="time" value={formData.weddingTime} onChange={handleInputChange} required />
               <Input label="Venue Name *" name="weddingVenue" value={formData.weddingVenue} onChange={handleInputChange} required />
               <Input label="Venue Address" name="weddingVenueAddress" value={formData.weddingVenueAddress} onChange={handleInputChange} />
               <Input label="Google Maps Link" name="googleMapsLink" value={formData.googleMapsLink} onChange={handleInputChange} placeholder="https://maps.google.com/..." className="md:col-span-2" />
             </div>
           </FormSection>
 
-          {/* Haladi Ceremony */}
-          <FormSection title="🌼 Haladi Ceremony (Optional)">
+          {/* Secondary Ceremony */}
+          <FormSection title={`🌼 ${formData.secondaryCeremonyLabel || 'Secondary Ceremony'} (Optional)`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Haladi Date" name="haladiDate" type="date" value={formData.haladiDate} onChange={handleInputChange} />
-              <Input label="Haladi Time" name="haladiTime" type="time" value={formData.haladiTime} onChange={handleInputChange} />
-              <Input label="Haladi Venue" name="haladiVenue" value={formData.haladiVenue} onChange={handleInputChange} className="md:col-span-2" />
+              <Input label="Date" name="haladiDate" type="date" value={formData.haladiDate} onChange={handleInputChange} />
+              <Input label="Time" name="haladiTime" type="time" value={formData.haladiTime} onChange={handleInputChange} />
+              <Input label="Venue" name="haladiVenue" value={formData.haladiVenue} onChange={handleInputChange} className="md:col-span-2" />
             </div>
           </FormSection>
 
           {/* Reception */}
-          <FormSection title="🎉 Reception (Optional)">
+          <FormSection title={`🎉 ${formData.receptionLabel || 'Reception'} (Optional)`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Reception Date" name="receptionDate" type="date" value={formData.receptionDate} onChange={handleInputChange} />
-              <Input label="Reception Time" name="receptionTime" type="time" value={formData.receptionTime} onChange={handleInputChange} />
-              <Input label="Reception Venue" name="receptionVenue" value={formData.receptionVenue} onChange={handleInputChange} className="md:col-span-2" />
+              <Input label="Date" name="receptionDate" type="date" value={formData.receptionDate} onChange={handleInputChange} />
+              <Input label="Time" name="receptionTime" type="time" value={formData.receptionTime} onChange={handleInputChange} />
+              <Input label="Venue" name="receptionVenue" value={formData.receptionVenue} onChange={handleInputChange} className="md:col-span-2" />
             </div>
           </FormSection>
 
           {/* Main Photo */}
-          <FormSection title="📸 Main Couple Photo">
+          <FormSection title="📸 Main Photo">
             <FileUpload
               onUpload={(file) => handleFileUpload(file, 'main')}
               preview={mainPhoto}
               onRemove={() => setMainPhoto('')}
-              label="Click or drag to upload main couple photo"
+              label="Click or drag to upload main photo"
             />
           </FormSection>
 
@@ -280,7 +471,7 @@ export default function CreatePage() {
           </FormSection>
 
           {/* Schedule */}
-          <FormSection title="📅 Wedding Day Schedule">
+          <FormSection title="📅 Event Day Schedule">
             {formData.schedule.map((item, index) => (
               <div key={index} className="flex gap-4 items-center mb-3">
                 <input
@@ -322,7 +513,7 @@ export default function CreatePage() {
               rounded-full font-serif text-lg font-semibold text-[#1a0a0a] uppercase tracking-wider
               shadow-lg hover:shadow-[#d4af37]/50 transition-all disabled:opacity-50"
           >
-            {isSubmitting ? 'Creating...' : '✨ Generate Invitation ✨'}
+            {isSubmitting ? 'Saving...' : isEditMode ? '✨ Update Invitation ✨' : '✨ Generate Invitation ✨'}
           </button>
         </form>
 
@@ -341,7 +532,7 @@ export default function CreatePage() {
                 {window.location.origin}{result.url}
               </div>
 
-              <div className="flex gap-4 justify-center">
+              <div className="flex gap-4 justify-center flex-wrap">
                 <button
                   onClick={copyLink}
                   className="px-6 py-2 bg-[#d4af37] text-[#1a0a0a] rounded-full font-semibold"
@@ -356,6 +547,12 @@ export default function CreatePage() {
                 >
                   👁️ View
                 </a>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="px-6 py-2 border-2 border-[#c9a86c] text-[#c9a86c] rounded-full font-semibold"
+                >
+                  Dashboard
+                </button>
               </div>
             </motion.div>
           </div>

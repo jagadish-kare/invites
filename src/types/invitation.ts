@@ -1,13 +1,24 @@
 // Core invitation data types
+export type EventType = 'wedding' | 'housewarming' | 'birthday' | 'engagement' | 'other';
+
 export interface InvitationData {
   id: string;
   templateId: string;
   
-  // Couple Info
-  groomName: string;
-  brideName: string;
+  // Event Type & Custom Labels
+  eventType: EventType;
+  eventTitle: string; // e.g., "Wedding Ceremony", "Griha Pravesh", "Birthday Party"
   
-  // Parents Info
+  // Custom Ceremony Labels (user-editable headings)
+  mainCeremonyLabel: string; // e.g., "WEDDING CEREMONY", "GRIHA PRAVESH"
+  secondaryCeremonyLabel?: string; // e.g., "HALADI CEREMONY", "POOJA"
+  receptionLabel?: string; // e.g., "RECEPTION", "DINNER", "PARTY"
+  
+  // Main Persons (For wedding: groom/bride, for other events: host names)
+  groomName: string; // or "Host Name 1"
+  brideName: string; // or "Host Name 2" (optional for non-wedding)
+  
+  // Parents/Family Info
   groomFatherName: string;
   groomMotherName: string;
   brideFatherName: string;
@@ -15,18 +26,19 @@ export interface InvitationData {
   groomAddress: string;
   brideAddress: string;
   
-  // Wedding Event
+  // Main Event
   weddingDate: string;
   weddingTime: string;
   weddingVenue: string;
   weddingVenueAddress: string;
   googleMapsLink: string;
   
-  // Optional Events
+  // Secondary Event (Optional)
   haladiDate?: string;
   haladiTime?: string;
   haladiVenue?: string;
   
+  // Third Event (Optional)
   receptionDate?: string;
   receptionTime?: string;
   receptionVenue?: string;
@@ -42,6 +54,7 @@ export interface InvitationData {
   
   // Meta
   createdAt: string;
+  status?: 'live' | 'expired' | 'draft';
 }
 
 export interface ScheduleItem {
@@ -51,7 +64,7 @@ export interface ScheduleItem {
 }
 
 export interface GuestbookEntry {
-  id: number;
+  id: number | string;
   invitationId: string;
   guestName: string;
   wishes: string;
@@ -82,3 +95,12 @@ export interface TemplateProps {
   onGuestbookSubmit: (name: string, wishes: string) => Promise<void>;
   guestbookEntries: GuestbookEntry[];
 }
+
+// Event type options for dropdown
+export const EVENT_TYPES: { value: EventType; label: string; defaultTitle: string }[] = [
+  { value: 'wedding', label: 'Wedding', defaultTitle: 'Wedding Invitation' },
+  { value: 'housewarming', label: 'House Warming (Griha Pravesh)', defaultTitle: 'Griha Pravesh' },
+  { value: 'engagement', label: 'Engagement', defaultTitle: 'Engagement Ceremony' },
+  { value: 'birthday', label: 'Birthday', defaultTitle: 'Birthday Celebration' },
+  { value: 'other', label: 'Other', defaultTitle: 'You are Invited' },
+];

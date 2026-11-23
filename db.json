@@ -1,5 +1,13 @@
 {
-  "users": [],
+  "users": [
+    {
+      "id": "b6f070a9-31d3-43cf-aa2c-f723c8f6ced1",
+      "email": "jagadishkare11@gmail.com",
+      "name": "Jagadish Kare",
+      "password": "df58a1152b1633b25208f727794b3b52be71ab7721ad65823c5522799f4121dd",
+      "createdAt": "2026-11-23T10:18:30.498Z"
+    }
+  ],
   "invitations": [],
   "guestbook": []
 }
