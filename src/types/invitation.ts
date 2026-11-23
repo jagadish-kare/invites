@@ -49,6 +49,10 @@ export interface InvitationData {
   qrCodeImage: string;
   qrLabel: string;
   
+  // Audio/Music
+  audioUrl?: string; // Local uploaded audio or extracted YouTube audio
+  youtubeLink?: string; // YouTube link for background music
+  
   // Schedule
   schedule: ScheduleItem[];
   

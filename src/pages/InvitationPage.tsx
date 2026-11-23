@@ -3,8 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { InvitationData, GuestbookEntry } from '../types/invitation'
 
-// Import templates
-import RoyalMaroonTemplate from '../templates/RoyalMaroon'
+// Import the common template with theme support
+import InvitationTemplate from '../templates/InvitationTemplate'
 
 interface ExpiredData {
   groom_name?: string;
@@ -21,6 +21,7 @@ export default function InvitationPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expired, setExpired] = useState<ExpiredData | null>(null)
+  const [themeId, setThemeId] = useState('royal-maroon')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,12 +92,19 @@ export default function InvitationPage() {
           qrCodeImage: invData.qr_code_image || '',
           qrLabel: invData.qr_label || 'Gift',
           
+          // Audio
+          audioUrl: invData.audio_url || '',
+          youtubeLink: invData.youtube_link || '',
+          
           // Schedule
           schedule: invData.schedule || [],
           
           // Meta
           createdAt: invData.created_at,
         })
+        
+        // Set theme from invitation data
+        setThemeId(invData.template_id || 'royal-maroon')
 
         // Fetch guestbook entries
         const gbResponse = await fetch(`/api/guestbook/${id}`)
@@ -224,10 +232,11 @@ export default function InvitationPage() {
   }
 
   return (
-    <RoyalMaroonTemplate
+    <InvitationTemplate
       data={data}
       onGuestbookSubmit={handleGuestbookSubmit}
       guestbookEntries={guestbookEntries}
+      themeId={themeId}
     />
   )
 }

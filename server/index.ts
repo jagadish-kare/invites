@@ -164,15 +164,22 @@ cloudinary.config({
 // Multer for handling file uploads (memory storage)
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB for audio files
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase())
-    const mimetype = allowedTypes.test(file.mimetype)
-    if (extname && mimetype) {
+    const imageTypes = /jpeg|jpg|png|gif|webp/
+    const audioTypes = /mp3|mpeg|wav|audio/
+    const extname = path.extname(file.originalname).toLowerCase()
+    const mimetype = file.mimetype
+    
+    // Check if it's an image
+    if (imageTypes.test(extname.replace('.', '')) && imageTypes.test(mimetype.split('/')[1] || '')) {
+      cb(null, true)
+    }
+    // Check if it's audio
+    else if (mimetype.startsWith('audio/') || /\.(mp3|wav)$/i.test(extname)) {
       cb(null, true)
     } else {
-      cb(new Error('Only image files are allowed'))
+      cb(new Error('Only image and audio files are allowed'))
     }
   }
 })
@@ -269,10 +276,10 @@ async function authMiddleware(req: any, res: any, next: any) {
 }
 
 // Upload to Cloudinary helper
-async function uploadToCloudinary(buffer: Buffer, folder: string): Promise<string> {
+async function uploadToCloudinary(buffer: Buffer, folder: string, resourceType: 'image' | 'video' = 'image'): Promise<string> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: 'image' },
+      { folder, resource_type: resourceType },
       (error, result) => {
         if (error) reject(error)
         else resolve(result?.secure_url || '')
@@ -435,6 +442,10 @@ app.post('/api/invitation', authMiddleware, async (req: any, res) => {
       schedule: data.schedule || [],
       gallery_photos: data.galleryPhotos || [],
       
+      // Audio
+      audio_url: data.audioUrl || '',
+      youtube_link: data.youtubeLink || '',
+      
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
@@ -502,6 +513,10 @@ app.put('/api/invitation/:id', authMiddleware, async (req: any, res) => {
       qr_label: data.qrLabel || existing.qr_label,
       schedule: data.schedule || existing.schedule,
       gallery_photos: data.galleryPhotos || existing.gallery_photos,
+      
+      // Audio
+      audio_url: data.audioUrl || existing.audio_url || '',
+      youtube_link: data.youtubeLink || existing.youtube_link || '',
       
       updated_at: new Date().toISOString()
     }
@@ -608,7 +623,7 @@ app.get('/api/invitation/:id', async (req, res) => {
   }
 })
 
-// Upload image to Cloudinary
+// Upload image/audio to Cloudinary
 app.post('/api/upload/:id', authMiddleware, upload.single('image'), async (req: any, res) => {
   try {
     if (!req.file) {
@@ -616,7 +631,11 @@ app.post('/api/upload/:id', authMiddleware, upload.single('image'), async (req: 
     }
 
     const folder = `invitations/${req.params.id}`
-    const url = await uploadToCloudinary(req.file.buffer, folder)
+    const isAudio = req.file.mimetype.startsWith('audio/')
+    
+    // Use 'video' resource type for audio in Cloudinary (it handles audio under video)
+    const resourceType = isAudio ? 'video' : 'image'
+    const url = await uploadToCloudinary(req.file.buffer, folder, resourceType)
     
     res.json({ success: true, path: url })
   } catch (error: any) {

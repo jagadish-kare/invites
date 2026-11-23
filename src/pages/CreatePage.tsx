@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { EVENT_TYPES, EventType } from '../types/invitation'
+import { THEMES } from '../templates/themes'
 
 interface FormData {
+  templateId: string;
   eventType: EventType;
   eventTitle: string;
   mainCeremonyLabel: string;
@@ -29,6 +31,7 @@ interface FormData {
   receptionTime: string;
   receptionVenue: string;
   qrLabel: string;
+  youtubeLink: string;
   schedule: { time: string; event: string }[];
 }
 
@@ -49,6 +52,7 @@ export default function CreatePage() {
   const isDuplicateMode = !!duplicateId
 
   const [formData, setFormData] = useState<FormData>({
+    templateId: 'royal-maroon',
     eventType: 'wedding',
     eventTitle: 'Wedding Invitation',
     mainCeremonyLabel: 'WEDDING CEREMONY',
@@ -74,12 +78,14 @@ export default function CreatePage() {
     receptionTime: '',
     receptionVenue: '',
     qrLabel: 'Gift',
+    youtubeLink: '',
     schedule: [{ time: '09:00', event: '' }],
   })
 
   const [mainPhoto, setMainPhoto] = useState<string>('')
   const [galleryPhotos, setGalleryPhotos] = useState<string[]>([])
   const [qrCodeImage, setQrCodeImage] = useState<string>('')
+  const [audioUrl, setAudioUrl] = useState<string>('')
   const [tempId] = useState<string>(`temp-${Date.now()}`)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -97,6 +103,7 @@ export default function CreatePage() {
         if (response.ok) {
           const data = await response.json()
           setFormData({
+            templateId: data.template_id || 'royal-maroon',
             eventType: data.event_type || 'wedding',
             eventTitle: data.event_title || 'Wedding Invitation',
             mainCeremonyLabel: data.main_ceremony_label || 'WEDDING CEREMONY',
@@ -122,6 +129,7 @@ export default function CreatePage() {
             receptionTime: data.reception_time || '',
             receptionVenue: data.reception_venue || '',
             qrLabel: data.qr_label || 'Gift',
+            youtubeLink: data.youtube_link || '',
             schedule: data.schedule?.length ? data.schedule : [{ time: '09:00', event: '' }],
           })
           // For duplicate, don't copy photos (user needs to upload new ones)
@@ -129,6 +137,7 @@ export default function CreatePage() {
             setMainPhoto(data.main_photo || '')
             setGalleryPhotos(data.gallery_photos || [])
             setQrCodeImage(data.qr_code_image || '')
+            setAudioUrl(data.audio_url || '')
           }
         }
       } catch (error) {
@@ -165,7 +174,7 @@ export default function CreatePage() {
 
   const handleFileUpload = async (
     file: File, 
-    type: 'main' | 'gallery' | 'qr'
+    type: 'main' | 'gallery' | 'qr' | 'audio'
   ) => {
     const formDataObj = new FormData()
     formDataObj.append('image', file)
@@ -185,11 +194,12 @@ export default function CreatePage() {
       if (data.success) {
         if (type === 'main') setMainPhoto(data.path)
         else if (type === 'qr') setQrCodeImage(data.path)
+        else if (type === 'audio') setAudioUrl(data.path)
         else if (type === 'gallery') setGalleryPhotos(prev => [...prev, data.path])
       }
     } catch (error) {
       console.error('Upload failed:', error)
-      alert('Failed to upload image')
+      alert('Failed to upload file')
     }
   }
 
@@ -226,6 +236,7 @@ export default function CreatePage() {
         mainPhoto,
         galleryPhotos,
         qrCodeImage,
+        audioUrl,
         schedule: formData.schedule.filter(s => s.time && s.event),
       }
 
@@ -302,6 +313,48 @@ export default function CreatePage() {
         </motion.div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Theme Selection */}
+          <FormSection title="🎨 Choose Theme">
+            <p className="text-[#a08060] text-sm mb-4">Select a color theme for your invitation</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {THEMES.map(theme => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, templateId: theme.id }))}
+                  className={`relative p-3 rounded-lg border-2 transition-all ${
+                    formData.templateId === theme.id 
+                      ? 'border-[#d4af37] bg-[#d4af37]/10' 
+                      : 'border-[#d4af37]/30 hover:border-[#d4af37]/50'
+                  }`}
+                >
+                  {/* Color preview */}
+                  <div className="flex gap-1 mb-2 justify-center">
+                    <div 
+                      className="w-6 h-6 rounded-full border border-white/20"
+                      style={{ backgroundColor: theme.colors.bgGradientFrom }}
+                    />
+                    <div 
+                      className="w-6 h-6 rounded-full border border-white/20"
+                      style={{ backgroundColor: theme.colors.primary }}
+                    />
+                    <div 
+                      className="w-6 h-6 rounded-full border border-white/20"
+                      style={{ backgroundColor: theme.colors.textPrimary }}
+                    />
+                  </div>
+                  <p className="text-[#f5e6d3] text-sm font-medium">{theme.name}</p>
+                  <p className="text-[#a08060] text-xs mt-1">{theme.description}</p>
+                  {formData.templateId === theme.id && (
+                    <div className="absolute top-2 right-2 w-5 h-5 bg-[#d4af37] rounded-full flex items-center justify-center">
+                      <span className="text-[#1a0a0a] text-xs">✓</span>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </FormSection>
+
           {/* Event Type Selection */}
           <FormSection title="🎊 Event Type">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -468,6 +521,56 @@ export default function CreatePage() {
               label="Click or drag to upload QR code image"
               className="mt-4"
             />
+          </FormSection>
+
+          {/* Background Music */}
+          <FormSection title="🎵 Background Music (Optional)">
+            <p className="text-[#a08060] text-sm mb-4">Add background music that plays when the invitation opens</p>
+            
+            {/* Audio File Upload */}
+            <div className="mb-4">
+              <label className="block text-sm text-[#c9a86c] mb-2">Upload Audio File (MP3)</label>
+              <label className="block border-2 border-dashed border-[#d4af37]/40 rounded-xl p-6 text-center cursor-pointer hover:border-[#d4af37] hover:bg-[#d4af37]/5 transition-all">
+                <div className="text-3xl mb-2">🎶</div>
+                <p className="text-[#c9a86c] text-sm">Click to upload MP3 file</p>
+                <input
+                  type="file"
+                  accept="audio/mp3,audio/mpeg,audio/wav"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleFileUpload(file, 'audio')
+                  }}
+                  className="hidden"
+                />
+              </label>
+              {audioUrl && (
+                <div className="mt-3 flex items-center gap-3 p-3 bg-[#1a0a0a]/80 border border-[#d4af37]/30 rounded-lg">
+                  <span className="text-2xl">🎵</span>
+                  <span className="text-[#f5e6d3] text-sm flex-1 truncate">{audioUrl.split('/').pop()}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAudioUrl('')}
+                    className="text-red-500 hover:text-red-400"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="text-center text-[#c9a86c] text-sm my-3">— OR —</div>
+
+            {/* YouTube Link */}
+            <Input 
+              label="YouTube Music Link" 
+              name="youtubeLink" 
+              value={formData.youtubeLink}
+              onChange={handleInputChange}
+              placeholder="https://youtube.com/watch?v=..."
+            />
+            <p className="text-[#a08060] text-xs mt-2">
+              Note: YouTube audio will be extracted. For best results, use direct MP3 upload.
+            </p>
           </FormSection>
 
           {/* Schedule */}
