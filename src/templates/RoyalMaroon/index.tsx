@@ -12,6 +12,7 @@ export default function RoyalMaroonTemplate({
   const [currentPhoto, setCurrentPhoto] = useState(0)
   const [giftOpen, setGiftOpen] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
+  const galleryRef = useRef<HTMLDivElement>(null)
 
   // Get custom labels with fallbacks
   const mainCeremonyLabel = data.mainCeremonyLabel || 'WEDDING CEREMONY'
@@ -47,7 +48,7 @@ export default function RoyalMaroonTemplate({
     return () => { clearInterval(interval); el?.removeEventListener('wheel', pause); el?.removeEventListener('touchstart', pause) }
   }, [isOpened])
 
-  // Photo gallery auto-advance
+  // Photo gallery auto-advance with slide effect
   useEffect(() => {
     if (data.galleryPhotos.length <= 1) return
     const timer = setInterval(() => {
@@ -55,6 +56,14 @@ export default function RoyalMaroonTemplate({
     }, 3000)
     return () => clearInterval(timer)
   }, [data.galleryPhotos.length])
+
+  // Scroll gallery to current photo
+  useEffect(() => {
+    if (galleryRef.current) {
+      const scrollAmount = currentPhoto * galleryRef.current.offsetWidth
+      galleryRef.current.scrollTo({ left: scrollAmount, behavior: 'smooth' })
+    }
+  }, [currentPhoto])
 
   const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
   const formatTime = (t: string) => {
@@ -69,8 +78,19 @@ export default function RoyalMaroonTemplate({
   const getWeekday = (d: string) => new Date(d).toLocaleString('en', { weekday: 'long' })
 
   const handleOpen = () => {
-    console.log('Opening invitation...')
     setIsOpened(true)
+  }
+
+  // Handle gallery swipe
+  const handleGalleryScroll = () => {
+    if (galleryRef.current) {
+      const scrollLeft = galleryRef.current.scrollLeft
+      const width = galleryRef.current.offsetWidth
+      const newIndex = Math.round(scrollLeft / width)
+      if (newIndex !== currentPhoto && newIndex >= 0 && newIndex < data.galleryPhotos.length) {
+        setCurrentPhoto(newIndex)
+      }
+    }
   }
 
   return (
@@ -119,7 +139,7 @@ export default function RoyalMaroonTemplate({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.5 }}
             >
-              {/* Ornate Frame */}
+              {/* Frame with image background */}
               <OrnateFrame>
                 <div className="text-center py-8 px-4">
                   {/* Om Symbol */}
@@ -136,21 +156,14 @@ export default function RoyalMaroonTemplate({
                     {isWeddingType ? 'SHUBH VIVAH' : 'CORDIALLY INVITES YOU'}
                   </p>
 
-                  {/* Main Photo */}
+                  {/* Main Photo - No cropping */}
                   {data.mainPhoto && (
-                    <div className="relative mx-auto w-32 h-32 mb-4">
-                      <div className="absolute inset-0 rounded-full border-2 border-[#d4af37] p-1">
-                        <img 
-                          src={data.mainPhoto} 
-                          alt="Couple" 
-                          className="w-full h-full object-cover rounded-full"
-                        />
-                      </div>
-                      {/* Decorative corners */}
-                      <div className="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-[#d4af37]" />
-                      <div className="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-[#d4af37]" />
-                      <div className="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-[#d4af37]" />
-                      <div className="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-[#d4af37]" />
+                    <div className="relative mx-auto w-32 h-40 mb-4 border-2 border-[#d4af37] p-1 bg-[#2d0808]">
+                      <img 
+                        src={data.mainPhoto} 
+                        alt="Couple" 
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                   )}
 
@@ -203,11 +216,14 @@ export default function RoyalMaroonTemplate({
               <div className="text-center py-6 px-4">
                 <p className="text-[#d4af37] text-xs tracking-[0.3em] mb-4">SAVE THE DATE</p>
                 
+                {/* Main Photo - No cropping */}
                 {data.mainPhoto && (
-                  <div className="relative mx-auto w-40 h-52 mb-4">
-                    <div className="absolute inset-0 border-2 border-[#d4af37] rounded-lg overflow-hidden">
-                      <img src={data.mainPhoto} alt="Couple" className="w-full h-full object-cover" />
-                    </div>
+                  <div className="relative mx-auto w-44 h-56 mb-4 border-2 border-[#d4af37] p-1 bg-[#2d0808]">
+                    <img 
+                      src={data.mainPhoto} 
+                      alt="Couple" 
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                 )}
 
@@ -293,31 +309,37 @@ export default function RoyalMaroonTemplate({
             </Section>
           )}
 
-          {/* Photo Gallery */}
+          {/* Photo Gallery - Horizontal Swipe */}
           {data.galleryPhotos.length > 0 && (
             <Section>
               <OrnateFrame>
-                <div className="text-center py-6 px-4">
+                <div className="text-center py-6 px-2">
                   <p className="text-[#d4af37] text-xs tracking-[0.2em] mb-4">OUR MOMENTS</p>
                   
-                  <div className="relative w-56 h-56 mx-auto">
-                    <div className="absolute inset-0 border border-[#d4af37]/50 rounded-lg overflow-hidden">
-                      <AnimatePresence mode="wait">
-                        <motion.img
-                          key={currentPhoto}
-                          src={data.galleryPhotos[currentPhoto]}
-                          alt="Gallery"
-                          className="w-full h-full object-cover"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.5 }}
-                        />
-                      </AnimatePresence>
-                    </div>
+                  {/* Horizontal scrolling gallery */}
+                  <div 
+                    ref={galleryRef}
+                    className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    onScroll={handleGalleryScroll}
+                  >
+                    {data.galleryPhotos.map((photo, index) => (
+                      <div 
+                        key={index}
+                        className="flex-shrink-0 w-full snap-center px-2"
+                      >
+                        <div className="mx-auto w-60 h-72 border-2 border-[#d4af37] p-1 bg-[#2d0808]">
+                          <img 
+                            src={photo} 
+                            alt={`Gallery ${index + 1}`} 
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  {/* Dots */}
+                  {/* Dots indicator */}
                   <div className="flex justify-center gap-2 mt-4">
                     {data.galleryPhotos.map((_, i) => (
                       <button
@@ -329,6 +351,7 @@ export default function RoyalMaroonTemplate({
                       />
                     ))}
                   </div>
+                  <p className="text-[#c9a86c] text-xs mt-2">{currentPhoto + 1} / {data.galleryPhotos.length}</p>
                 </div>
               </OrnateFrame>
             </Section>
@@ -442,7 +465,7 @@ export default function RoyalMaroonTemplate({
                       <p className="font-serif text-xl text-[#8B0000] mb-1">Gift Box</p>
                       <p className="text-[#5a0000] text-sm mb-4">{data.qrLabel || 'Scan to send gift'}</p>
                       <div className="bg-white p-4 rounded-xl inline-block shadow-lg">
-                        <img src={data.qrCodeImage} alt="QR Code" className="w-44 h-44" />
+                        <img src={data.qrCodeImage} alt="QR Code" className="w-44 h-44 object-contain" />
                       </div>
                     </motion.div>
                   </motion.div>
@@ -470,7 +493,7 @@ export default function RoyalMaroonTemplate({
 
 function Section({ children }: { children: React.ReactNode }) {
   return (
-    <section className="py-6 px-4">
+    <section className="py-4 px-3">
       {children}
     </section>
   )
@@ -485,8 +508,8 @@ function OrnateFrame({ children }: { children: React.ReactNode }) {
         backgroundSize: '100% 100%',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        padding: '50px 25px 40px 25px',
-        minHeight: '320px',
+        padding: '45px 20px 35px 20px',
+        minHeight: '280px',
       }}
     >
       {/* Content inside the frame */}
