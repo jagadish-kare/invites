@@ -511,86 +511,6 @@ export default function InvitationTemplate({
                   </svg>
                 </motion.div>
                 <p className="text-xs mt-3" style={{ color: c.textSecondary }}>Tap to open</p>
-
-                {/* QR Modal */}
-                <AnimatePresence>
-                  {giftOpen && (
-                    <motion.div
-                      className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      onClick={() => setGiftOpen(false)}
-                    >
-                      <motion.div
-                        className="rounded-2xl p-6 max-w-xs w-full text-center relative shadow-2xl"
-                        style={{ background: `linear-gradient(to bottom, ${c.textPrimary}, ${c.textSecondary})` }}
-                        initial={{ scale: 0.8, y: 50 }}
-                        animate={{ scale: 1, y: 0 }}
-                        exit={{ scale: 0.8, y: 50 }}
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <button 
-                          onClick={() => setGiftOpen(false)} 
-                          className="absolute top-3 right-3 text-2xl w-8 h-8"
-                          style={{ color: c.bgMedium }}
-                        >
-                          ✕
-                        </button>
-                        <div className="text-4xl mb-2">🎁</div>
-                        <p className="font-serif text-xl mb-1" style={{ color: c.bgMedium }}>Blessings</p>
-                        <p className="text-sm mb-4" style={{ color: c.bgDark }}>{data.qrLabel || 'Scan to send gift'}</p>
-                        <div className="bg-white p-4 rounded-xl inline-block shadow-inner mb-4">
-                          <img src={data.qrCodeImage} alt="QR Code" className="w-48 h-48 object-contain" />
-                        </div>
-                        
-                        {/* Save QR Button */}
-                        <div>
-                          <a
-                            href={data.qrCodeImage}
-                            download={`qr-code-${data.groomName || 'gift'}.png`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all"
-                            style={{ 
-                              backgroundColor: c.bgMedium, 
-                              color: c.textPrimary,
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              // For cross-origin images, we need to handle differently
-                              const img = new Image()
-                              img.crossOrigin = 'anonymous'
-                              img.onload = () => {
-                                const canvas = document.createElement('canvas')
-                                canvas.width = img.width
-                                canvas.height = img.height
-                                const ctx = canvas.getContext('2d')
-                                ctx?.drawImage(img, 0, 0)
-                                const link = document.createElement('a')
-                                link.download = `qr-code-${data.groomName || 'gift'}.png`
-                                link.href = canvas.toDataURL('image/png')
-                                link.click()
-                              }
-                              img.onerror = () => {
-                                // Fallback: open in new tab
-                                window.open(data.qrCodeImage, '_blank')
-                              }
-                              img.src = data.qrCodeImage
-                              e.preventDefault()
-                            }}
-                          >
-                            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-                              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                            </svg>
-                            Save QR Code
-                          </a>
-                        </div>
-                      </motion.div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </Card>
             )}
 
@@ -606,6 +526,83 @@ export default function InvitationTemplate({
           </div>
         </div>
       )}
+
+      {/* QR Code Fullscreen Popup - Outside scrollable content */}
+      <AnimatePresence>
+        {giftOpen && data.qrCodeImage && (
+          <motion.div
+            className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setGiftOpen(false)}
+          >
+            <motion.div
+              className="rounded-2xl p-8 max-w-sm w-full text-center relative shadow-2xl"
+              style={{ background: `linear-gradient(to bottom, #fff, #f5f5f5)` }}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25 }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Close button */}
+              <button 
+                onClick={() => setGiftOpen(false)} 
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 text-2xl transition-colors"
+              >
+                ✕
+              </button>
+              
+              <div className="text-5xl mb-3">🎁</div>
+              <p className="font-serif text-2xl mb-1 text-gray-800">Blessings</p>
+              <p className="text-sm mb-5 text-gray-600">{data.qrLabel || 'Scan to send gift'}</p>
+              
+              {/* QR Code */}
+              <div className="bg-white p-5 rounded-2xl inline-block shadow-lg border border-gray-100 mb-5">
+                <img src={data.qrCodeImage} alt="QR Code" className="w-56 h-56 object-contain" />
+              </div>
+              
+              {/* Save Button */}
+              <div>
+                <button
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold transition-all"
+                  style={{ 
+                    background: `linear-gradient(to right, ${c.primaryDark}, ${c.primary})`,
+                    color: c.buttonText,
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const img = new Image()
+                    img.crossOrigin = 'anonymous'
+                    img.onload = () => {
+                      const canvas = document.createElement('canvas')
+                      canvas.width = img.width
+                      canvas.height = img.height
+                      const ctx = canvas.getContext('2d')
+                      ctx?.drawImage(img, 0, 0)
+                      const link = document.createElement('a')
+                      link.download = `qr-code-${data.groomName || 'gift'}.png`
+                      link.href = canvas.toDataURL('image/png')
+                      link.click()
+                    }
+                    img.onerror = () => {
+                      window.open(data.qrCodeImage, '_blank')
+                    }
+                    img.src = data.qrCodeImage
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                  </svg>
+                  Save QR Code
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
