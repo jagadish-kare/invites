@@ -8,10 +8,10 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:client": "vite",
     "dev:server": "tsx watch server/index.ts",
-    "build": "vite build && npm run build:server",
-    "build:server": "tsc -p server/tsconfig.json",
+    "build": "npx vite build && npm run build:server",
+    "build:server": "npx tsc -p server/tsconfig.json",
     "preview": "vite preview",
-    "start": "NODE_ENV=production node dist-server/index.js",
+    "start": "node dist-server/index.js",
     "start:win": "set NODE_ENV=production&& node dist-server/index.js"
   },
   "dependencies": {
