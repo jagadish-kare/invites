@@ -150,12 +150,46 @@ export default function InvitationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#2a0a0a] to-[#1a0505] flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#8B0000] via-[#5c0000] to-[#2a0000] flex flex-col items-center justify-center p-6">
+        {/* Floating particles */}
+        {[...Array(15)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1.5 h-1.5 bg-[#d4af37] rounded-full"
+            style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+            animate={{ y: [0, -20, 0], opacity: [0.2, 0.8, 0.2] }}
+            transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 2 }}
+          />
+        ))}
+        
         <motion.div
-          className="w-12 h-12 border-2 border-[#d4af37]/30 border-t-[#d4af37] rounded-full"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-        />
+          className="text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          {/* Om symbol or decorative */}
+          <motion.div
+            className="text-5xl mb-4"
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            🙏
+          </motion.div>
+          
+          {/* Loading text */}
+          <p className="text-[#d4af37] text-lg font-serif mb-6">Opening your invitation...</p>
+          
+          {/* Spinner */}
+          <motion.div
+            className="w-10 h-10 border-2 border-[#d4af37]/30 border-t-[#d4af37] rounded-full mx-auto"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          />
+          
+          {/* Subtext */}
+          <p className="text-[#c9a86c] text-sm mt-6 opacity-70">Please wait a moment...</p>
+        </motion.div>
       </div>
     )
   }
